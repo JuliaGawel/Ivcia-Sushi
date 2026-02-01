@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Ivcia Sushi</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#111;
+    color:#fff;
+}
+header{
+    background:#000;
+    padding:20px;
+    text-align:center;
+    font-size:28px;
+    font-weight:bold;
+}
+.sectionTitle{
+    padding:10px 20px;
+    font-size:22px;
+}
+.menu{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;
+    padding:20px;
+}
+.item{
+    background:#1c1c1c;
+    padding:15px;
+    border-radius:14px;
+    position:relative;
+}
+.circle{
+    width:60px;
+    height:60px;
+    background:#fff;
+    color:#000;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    position:absolute;
+    top:-15px;
+    left:50%;
+    transform:translateX(-50%);
+}
+.controls{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+button{
+    padding:8px 14px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+.plus{background:#19c37d}
+.minus{background:#e74c3c}
+select,input{
+    width:100%;
+    padding:7px;
+    margin-top:6px;
+    border-radius:6px;
+    border:none;
+}
+#cartBtn{
+    position:fixed;
+    bottom:20px;
+    left:20px;
+    background:#e6007e;
+    color:#fff;
+    padding:16px;
+    border-radius:50%;
+    font-size:20px;
+}
+#cart{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#000c;
+}
+.cartBox{
+    background:#111;
+    max-width:520px;
+    margin:30px auto;
+    padding:20px;
+    border-radius:16px;
+}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<header>Ivcia Sushi</header>
+
+<div class="sectionTitle">🍱 Zestawy Sushi</div>
+<div class="menu" id="sushiMenu"></div>
+
+<div class="sectionTitle">🥤 Napoje</div>
+<div class="menu" id="drinkMenu"></div>
+
+<button id="cartBtn" onclick="openCart()">🛒</button>
+
+<div id="cart">
+<div class="cartBox">
+
+<h2>Koszyk</h2>
+<div id="cartItems"></div>
+<p id="summary"></p>
+<p id="timeInfo"></p>
+
+<button onclick="checkout()">Przejdź do płatności</button>
+<button onclick="closeCart()">Zamknij</button>
+
+<div id="payment" class="hidden">
+<hr>
+<button onclick="showForm()">Płatność gotówką</button>
+<button onclick="showForm()">Płatność Aga Pay</button>
+</div>
+
+<div id="form" class="hidden">
+<hr>
+<input id="name" placeholder="Imię">
+<input id="surname" placeholder="Nazwisko">
+
+<select id="zone">
+<option value="">-- Strefa --</option>
+<option value="5">Świlcza 1–300 (5 zł)</option>
+<option value="6">Świlcza 301–500 (6 zł)</option>
+<option value="7.5">Świlcza 601–1300 (7.50 zł)</option>
+</select>
+
+<input id="city" placeholder="Miasto (Świlcza lub Rzeszów)">
+<select id="delivery"></select>
+
+<button onclick="sendOrder()">Wyślij zamówienie</button>
+</div>
+
+</div>
+</div>
+
+<script>
+const sushiSets=[
+{name:"Zestaw NR 1",price:20,gratis:1},
+{name:"Zestaw NR 2",price:23,gratis:1},
+{name:"Zestaw NR 3",price:25,gratis:2},
+{name:"Zestaw NR 4",price:31,gratis:2},
+{name:"Zestaw NR 5",price:34,gratis:2},
+{name:"Zestaw NR 6",price:42,gratis:3},
+{name:"Zestaw NR 7",price:50,gratis:3},
+{name:"Zestaw NR 8",price:57,gratis:3},
+{name:"Zestaw NR 10",price:83,gratis:4},
+{name:"Zestaw NR 11",price:95,gratis:4},
+{name:"Zestaw NR 12",price:150,gratis:4}
+];
+
+const drinks=[
+{name:"Pepsi 0.5L",price:5},
+{name:"Mirinda 0.5L",price:5},
+{name:"7Up 0.5L",price:5},
+{name:"Dixi Brzoskwinia",price:7.5},
+{name:"Dixi Cytryna",price:7.5},
+{name:"Dixi Zielona Herbata",price:7.5}
+];
+
+let cart=[];
+
+function addItem(item){ cart.push(item); }
+function removeItem(item){
+const i=cart.findIndex(x=>x.name===item.name);
+if(i>-1) cart.splice(i,1);
+}
+
+const sushiMenu=document.getElementById("sushiMenu");
+sushiSets.forEach(s=>{
+const d=document.createElement("div");
+d.className="item";
+d.innerHTML=`
+<h3>${s.name}</h3>
+<p>Cena: <b>${s.price} zł</b></p>
+<select>
+${[...Array(s.gratis)].map((_,i)=>`<option>${i+1} rolka gratis</option>`).join("")}
+</select>
+<div class="controls">
+<button class="plus">+</button>
+<button class="minus">-</button>
+</div>`;
+d.querySelector(".plus").onclick=()=>addItem(s);
+d.querySelector(".minus").onclick=()=>removeItem(s);
+sushiMenu.appendChild(d);
+});
+
+const drinkMenu=document.getElementById("drinkMenu");
+drinks.forEach(dk=>{
+const d=document.createElement("div");
+d.className="item";
+d.innerHTML=`
+<div class="circle">Dumian</div>
+<h3>${dk.name}</h3>
+<p>Cena: <b>${dk.price} zł</b></p>
+<div class="controls">
+<button class="plus">+</button>
+<button class="minus">-</button>
+</div>`;
+d.querySelector(".plus").onclick=()=>addItem(dk);
+d.querySelector(".minus").onclick=()=>removeItem(dk);
+drinkMenu.appendChild(d);
+});
+
+function openCart(){
+document.getElementById("cart").style.display="block";
+renderCart();
+}
+function closeCart(){
+document.getElementById("cart").style.display="none";
+}
+
+function renderCart(){
+let sum=0;
+const c=document.getElementById("cartItems");
+c.innerHTML="";
+cart.forEach(i=>{
+c.innerHTML+=`<p>${i.name} – ${i.price} zł</p>`;
+sum+=i.price;
+});
+document.getElementById("summary").innerHTML=`Razem produkty: <b>${sum.toFixed(2)} zł</b>`;
+document.getElementById("timeInfo").innerText=
+`Godzina zamówienia: ${new Date().toLocaleTimeString()}`;
+}
+
+function checkout(){
+if(cart.length===0){
+alert("Koszyk jest pusty!");
+return;
+}
+document.getElementById("payment").classList.remove("hidden");
+}
+
+function showForm(){
+document.getElementById("form").classList.remove("hidden");
+updateDelivery();
+}
+
+function updateDelivery(){
+const d=document.getElementById("delivery");
+d.innerHTML="";
+const h=new Date().getHours();
+
+if(h>=7 && h<20)
+d.innerHTML+=`<option value="delivery">Dostawa (7:00–20:00)</option>`;
+else
+d.innerHTML+=`<option disabled>Dostawa (za późno)</option>`;
+
+if(h>=7 && h<22)
+d.innerHTML+=`<option value="pickup">Odbiór osobisty (7:00–22:00)</option>`;
+else
+d.innerHTML+=`<option disabled>Odbiór osobisty (zamknięte)</option>`;
+}
+
+function sendOrder(){
+const name=nameInput.value=nameInput?.value;
+const n=document.getElementById("name").value.trim();
+const s=document.getElementById("surname").value.trim();
+const city=document.getElementById("city").value.trim();
+const zone=document.getElementById("zone").value;
+const delivery=document.getElementById("delivery").value;
+
+if(!n||!s||!city||!zone||!delivery){
+alert("Uzupełnij wszystkie pola!");
+return;
+}
+if(city!=="Świlcza" && city!=="Rzeszów"){
+alert("Nie ma dostaw na ten region");
+return;
+}
+
+let products=cart.reduce((a,b)=>a+b.price,0);
+let deliveryCost=delivery==="delivery"?parseFloat(zone):0;
+let total=products+deliveryCost;
+
+const body=
+`Ivcia Sushi – Zamówienie
+
+Klient: ${n} ${s}
+Miasto: ${city}
+Forma: ${delivery}
+
+Produkty:
+${cart.map(i=>i.name+" - "+i.price+" zł").join("\n")}
+
+Dostawa: ${deliveryCost} zł
+RAZEM: ${total.toFixed(2)} zł`;
+
+window.location.href=
+`mailto:pysznepl1122@gmail.com?subject=Nowe zamówienie Ivcia Sushi&body=${encodeURIComponent(body)}`;
+
+alert("Zamówienie wysłane – oczekuje na akceptację");
+}
+</script>
+
+</body>
+</html>
